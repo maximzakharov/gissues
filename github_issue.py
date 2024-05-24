@@ -173,7 +173,18 @@ class LoadRepoList:
         self.view = self.window.active_view()
 
     def format_entries(self):
-        entries = ["manually enter repository..."]
+        entries = []
+
+        project_name = None
+        project_data = self.window.project_data()
+        if project_data and 'folders' in project_data:
+            project_file = self.window.project_file_name()
+            if project_file:
+                project_name = project_file.split('/')[-1].split('.')[0]
+
+        if project_name:
+            entries.append(str(settings.get("username")) + "/" + project_name)
+
         if not settings.get("disable_local_repositories", False):
             repo_list = []
             folder_list = sublime.active_window().folders()
@@ -184,6 +195,8 @@ class LoadRepoList:
                             repo_list.append(repo_info)
             entries.extend(
                 ["{}/{}".format(repo[0], repo[1]) for repo in repo_list])
+
+        entries.append("manually enter repository...")
         self.entries = entries
 
     def show_panel_then_print_list(self, **args):
@@ -215,7 +228,7 @@ class LoadRepoList:
 
     def on_repo_selection(self, selection, subsequent_action, **args):
         if selection >= 0:
-            if selection == 0:
+            if "manually enter repository..." in self.entries[selection]:
                 self.window.run_command('hide_panel')
                 _param_on_enter_repo_info = partial(
                     self.on_enter_repo_info,
